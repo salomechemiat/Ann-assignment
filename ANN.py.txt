@@ -1,0 +1,127 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+# In[16]:
+
+
+import numpy as np
+
+
+# In[17]:
+
+
+#x= (input1, input2, input3) y= (expected output)
+x = np.array([[30, 40, 50],[40, 50, 20],[50, 20, 15],[20, 15, 60],[15, 60, 70],[60, 70, 50]],dtype=float)
+y = np.array([20, 15, 60, 70, 50, 40],dtype=float)
+
+
+# In[18]:
+
+
+class NeuralNetwork:
+    def __init__(self, x, y, learning_rate):
+        self.input = x#input
+        self.bind_values(x) #Scale units
+        #Outer layer Weight matrix(2*3) weight of matrix from input to hidden
+        self.weights1 = [[0.2, 0.3, 0.2], [0.1, 0.1, 0.1]]
+        #Hidden layer weight matrix(1*2)weight of matrix from hiddent to output
+        self.weights2 = [[0.5, 0.1]]
+        
+        self.target = y#Expected output
+        self.bind_values(y) #Scale units
+        self.learning_rate = learning_rate
+
+    def feed_foward(self):
+          #forward propagation through the network
+        new_inputs = []
+        for epoch in self.input:
+            epoch = np.array(epoch, ndmin=2).T 
+            layer1 = sigmoid(np.dot(self.weights1, epoch))#Activation function and dot product of x(input) and first set of weights
+            layer2 = sigmoid(np.dot(self.weights2, layer1)) #Dot product of hidden layer (layer1) and second set of weights
+            new_inputs.append(layer2)# Output
+
+        return new_inputs
+    #Scale units to a number less than 1
+    def bind_function(input, smallest, largest):
+        return (input - smallest) / (largest - smallest)
+    def bind_values(self, values):
+        min_value = values[np.unravel_index(
+            np.argmin(values, axis=None), values.shape)]
+        max_value = values[np.unravel_index(
+            np.argmax(values, axis=None), values.shape)]
+
+        new_values = np.array([bind_function(i, min_value, max_value)
+                               for i in np.nditer(values)], dtype=np.float64).reshape(values.shape)
+
+        np.put(values, range(values.size), new_values)
+        
+     
+    def sigmoid(self, s, deriv=False):
+        if (deriv == True):
+            return s*(1-s)
+        return 1/(1+np.exp(-s))
+
+  
+
+    def back_prop(self, input, target):
+        #Backward propagate through the network
+        target_vector = np.array(target, ndmin=2).T#Value of y ie the expected output
+        input = np.array(input, ndmin=2).T#Value of the input
+        
+        output_vector1 = np.dot(self.weights1, input)
+        output_vector_hidden = sigmoid(output_vector1)#Output of the hidden layer
+
+        output_vector2 = np.dot(self.weights2, output_vector_hidden)
+        output_vector_network = sigmoid(output_vector2)#Actual Output of the network
+        
+        output_errors = target_vector - output_vector_network#Error in output ie expected output- actual output
+    
+
+        print("Input: \n", input)
+        print("Expected: ", target)
+        print("Actual: ", output_vector_network)
+        print("Error :", output_errors, "\n")
+
+        # update the weights:Adjusting second set (hidden -> output) weights
+        tmp = output_errors * output_vector_network *             (1.0 - output_vector_network)
+
+        tmp = self.learning_rate * np.dot(tmp, output_vector_hidden.T)
+
+        self.weights2 += tmp
+
+        # calculate hidden errors:
+        hidden_errors = np.dot(self.weights2.T, output_errors)
+
+        # update the weights:Adjusting first set (input-> hidden) weights
+        tmp = hidden_errors * output_vector_hidden *             (1.0 - output_vector_hidden)
+        self.weights1 += self.learning_rate *             np.dot(tmp, input.T)
+
+    def train(self):#Training the model
+        for i in range(len(self.input)):#For loop to loop through inputs
+            self.back_prop(self.input[i], self.target[i])# call function for back propagation
+
+    def print_matrices(self):
+        print("Outer layer Weight matrix: ", self.weights1)#final trained Outer layer Weight matrix 
+        print("Hidden layer weight matrix: ", self.weights2)#final trained Hidden layer weight matrix
+
+
+# In[19]:
+
+
+def main():
+    size_of_learn_sample = int(len(x)*0.9)
+    print(size_of_learn_sample)
+
+    NN = NeuralNetwork(x, y, 0.5)#input, expected output, learning rate
+    NN.train()#Training the model
+    NN.print_matrices()#final trained weight matrix
+
+
+main()#Print main function
+
+
+# In[ ]:
+
+
+
+
